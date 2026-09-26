@@ -1,0 +1,33 @@
+[2026-09-20 09:58:05] Loaded 4 service(s) from 'services.conf'
+[2026-09-20 09:58:05] Control FIFOs ready: /tmp/supervisor_cmd.fifo / /tmp/supervisor_reply.fifo
+[2026-09-20 09:58:05] Use ./svctl <command> to control the supervisor.
+[2026-09-20 09:58:05] STARTED service 'webserver' (pid 111, path=/bin/sh)
+[2026-09-20 09:58:05] STARTED service 'flaky_task' (pid 113, path=/bin/sh)
+[2026-09-20 09:58:05] STARTED service 'monitor' (pid 114, path=/bin/sh)
+[2026-09-20 09:58:05] STARTED service 'backup_job' (pid 115, path=/bin/sh)
+[2026-09-20 09:58:07] Service 'flaky_task' (pid 113) exited with code 1
+[2026-09-20 09:58:07] Auto-restarting service 'flaky_task' (attempt 1/3)
+[2026-09-20 09:58:07] STARTED service 'flaky_task' (pid 119, path=/bin/sh)
+[2026-09-20 09:58:08] COMMAND received: STATUS 
+[2026-09-20 09:58:08] COMMAND received: PAUSE monitor
+[2026-09-20 09:58:08] Service 'monitor' (pid 114) paused (SIGSTOP)
+[2026-09-20 09:58:09] COMMAND received: STATUS 
+[2026-09-20 09:58:09] Service 'backup_job' (pid 115) exited with code 0
+[2026-09-20 09:58:09] COMMAND received: RESUME monitor
+[2026-09-20 09:58:09] Service 'monitor' (pid 114) resumed (SIGCONT)
+[2026-09-20 09:58:09] Service 'flaky_task' (pid 119) exited with code 1
+[2026-09-20 09:58:09] Auto-restarting service 'flaky_task' (attempt 2/3)
+[2026-09-20 09:58:09] STARTED service 'flaky_task' (pid 128, path=/bin/sh)
+[2026-09-20 09:58:11] Service 'flaky_task' (pid 128) exited with code 1
+[2026-09-20 09:58:11] Auto-restarting service 'flaky_task' (attempt 3/3)
+[2026-09-20 09:58:11] STARTED service 'flaky_task' (pid 131, path=/bin/sh)
+[2026-09-20 09:58:13] Service 'flaky_task' (pid 131) exited with code 1
+[2026-09-20 09:58:13] Service 'flaky_task' exceeded max restart attempts (3); giving up
+[2026-09-20 09:58:15] COMMAND received: STATUS 
+[2026-09-20 09:58:15] COMMAND received: SHUTDOWN 
+[2026-09-20 09:58:15] === Supervisor shutting down: stopping all services ===
+[2026-09-20 09:58:15] Stopping service 'webserver' (pid 111) with SIGTERM
+[2026-09-20 09:58:15] Service 'webserver' stopped gracefully
+[2026-09-20 09:58:15] Stopping service 'monitor' (pid 114) with SIGTERM
+[2026-09-20 09:58:15] Service 'monitor' stopped gracefully
+[2026-09-20 09:58:15] === All services stopped. Supervisor exiting. ===

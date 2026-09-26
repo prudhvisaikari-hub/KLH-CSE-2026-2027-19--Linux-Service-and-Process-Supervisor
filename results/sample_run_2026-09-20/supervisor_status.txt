@@ -1,0 +1,6 @@
+SERVICE         PID      STATE      RESTARTS   MAXRESTART
+-----------------------------------------------------------
+webserver       0        STOPPED    0          5         
+flaky_task      0        TERMINATED 3          3         
+monitor         0        STOPPED    0          5         
+backup_job      0        STOPPED    0          0         
