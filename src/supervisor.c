@@ -264,12 +264,9 @@ static int load_config(const char *path) {
             if (field && *field) max_restarts = atoi(field);
         }
 
-        strncpy(s->name, name, sizeof(s->name) - 1);
-        s->name[sizeof(s->name) - 1] = '\0';
-        strncpy(s->path, path_buf, sizeof(s->path) - 1);
-        s->path[sizeof(s->path) - 1] = '\0';
-        strncpy(s->args_raw, args_buf, sizeof(s->args_raw) - 1);
-        s->args_raw[sizeof(s->args_raw) - 1] = '\0';
+        snprintf(s->name, sizeof(s->name), "%s", name);
+        snprintf(s->path, sizeof(s->path), "%s", path_buf);
+        snprintf(s->args_raw, sizeof(s->args_raw), "%s", args_buf);
         s->autorestart  = autorestart;
         s->max_restarts = max_restarts;
         s->restart_count = 0;

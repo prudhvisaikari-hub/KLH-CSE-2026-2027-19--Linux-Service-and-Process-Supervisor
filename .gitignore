@@ -11,3 +11,4 @@ src/*.log
 src/*.out
 src/supervisor_status.txt
 *.fifo
+
