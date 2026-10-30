@@ -54,7 +54,7 @@ sudo apt install -y build-essential
 cd src
 make
 ```
-This produces two binaries in `src/`: `supervisord` and `svctl`.
+This produces five binaries in `src/`: `supervisord`, `svctl`, `webctl`, `httpserver`, and `updater`.
 
 ## Run
 
@@ -64,7 +64,7 @@ cd src
 ./supervisord services.conf
 ```
 
-**Terminal 2 — control it:**
+**Terminal 2 — control it via CLI:**
 ```bash
 cd src
 ./svctl STATUS
@@ -75,6 +75,13 @@ cd src
 ./svctl RESUME monitor
 ./svctl SHUTDOWN
 ```
+
+**Terminal 3 — control it via Web Dashboard:**
+```bash
+cd src
+./webctl
+```
+Then open your web browser and navigate to `http://localhost:8080`. The web dashboard provides a live, auto-refreshing view of your services and allows you to control them with a click.
 
 Logs are written to `src/supervisor.log`; the live status snapshot is
 `src/supervisor_status.txt`. Full details, the config file format, and
@@ -106,6 +113,69 @@ webserver /bin/sh "-c 'while true; do echo hi; sleep 5; done'" 1 5
   marked `TERMINATED` and left alone.
 
 Lines starting with `#` and blank lines are ignored.
+
+## Servers and Automated Updates
+
+This project includes real POSIX C network services and an autonomous rolling update agent integrated into the supervisor process tree:
+
+### Component Overview
+
+- **`httpserver` (`src/httpserver.c`)**: A minimal, single-threaded HTTP server built purely with raw POSIX sockets (`socket`, `bind`, `listen`, `accept`).
+  - Reads the release version from `<version_file>` once at startup.
+  - Serves `GET /health` with plain text `OK name=<name> version=<version> pid=<pid>\n` (HTTP 200). If the version string contains the word `broken`, it simulates an unhealthy release by returning HTTP 503 `UNHEALTHY name=<name> version=<version> pid=<pid>\n`.
+  - Serves `GET /` with a dark-themed HTML status page showing service name, release version, health status, port, PID, and uptime, auto-refreshing every 2 seconds.
+  - Configured on ports 9001, 9002, and 9003 in `services.conf`:
+    - `web1`: port `9001`
+    - `web2`: port `9002`
+    - `web3`: port `9003`
+
+- **`updater` (`src/updater.c`)**: An automated rolling deployment agent that runs as a managed supervisor service (`./updater deploy/VERSION web1:9001 web2:9002 web3:9003`).
+  - Polls `deploy/VERSION` every 2 seconds and detects content changes.
+  - Performs a zero-downtime rolling restart: for each target server in order, it executes `./svctl RESTART <name>` via `popen()` and validates the `"-> OK"` reply, then sends `"GET /health HTTP/1.0"` over a raw TCP socket to verify HTTP 200 and `"version=<new version> "`. Retries up to 10 times, 0.5 seconds apart.
+  - **Automated Rollback**: If any target server fails its health check, the updater immediately restores the previous release version into `deploy/VERSION`, restarts all servers touched so far back to the old version, verifies their health, and halts rollout. Untouched servers remain completely uninterrupted.
+  - Validates service names (alphanumeric, `_`, `-` only) and logs all lifecycle steps with timestamps to both stdout and `updater.log`.
+
+### Publishing a Release
+
+Releases can be published in two ways:
+
+1. **Via the Web Dashboard (`webctl` on port 8080):**
+   Open `http://localhost:8080`, enter a new version (e.g. `2.0`) into the **Publish release** form, and submit.
+   Or use `curl`:
+   ```bash
+   curl -X POST localhost:8080/release -d "version=2.0"
+   ```
+   *Note: Versions are strictly validated to 1–32 characters containing only letters, digits, '.', '_', and '-'. Invalid input is rejected with HTTP 400.*
+
+2. **Via the Filesystem:**
+   Directly write to the version file:
+   ```bash
+   echo "2.0" > deploy/VERSION
+   ```
+   Within 2 seconds, the `updater` agent detects the new version and performs a rolling restart across `web1`, `web2`, and `web3`.
+
+### Demonstrating an Automated Rollback
+
+To test automated failure detection and instantaneous rollback:
+1. Publish a release containing `broken` (e.g. `broken-3.0`):
+   ```bash
+   # Via CLI:
+   echo "broken-3.0" > deploy/VERSION
+
+   # Or via Web Dashboard / curl:
+   curl -X POST localhost:8080/release -d "version=broken-3.0"
+   ```
+2. The `updater` restarts `web1`. Upon querying `http://localhost:9001/health`, `web1` returns HTTP 503 (`UNHEALTHY`).
+3. After 10 failed retries, `updater` triggers an automated rollback:
+   - Restores `deploy/VERSION` back to `2.0`.
+   - Restarts `web1` back to `2.0` and confirms it is healthy.
+   - Leaves `web2` and `web3` untouched and online.
+   - Logs `HEALTH CHECK FAILED on 'web1'` followed by `ROLLBACK COMPLETE: restored 2.0` in `updater.log`.
+
+### Limitations
+
+- **Single-Threaded Architecture**: Both `httpserver` and `webctl` use single-threaded POSIX socket loops with client receive timeouts (2 seconds) designed for simplicity and educational clarity.
+- **Demo Switch**: The word `"broken"` in a version string serves as an intentional demo switch to simulate bad releases without injecting runtime crashes.
 
 ## Core capabilities
 

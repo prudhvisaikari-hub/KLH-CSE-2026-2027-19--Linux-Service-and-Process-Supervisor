@@ -1,0 +1,13 @@
+# Compiled binaries
+src/supervisord
+src/svctl
+src/webctl
+src/httpserver
+src/updater
+*.o
+
+# Runtime generated logs and status files
+src/*.log
+src/*.out
+src/supervisor_status.txt
+*.fifo
